@@ -1,4 +1,4 @@
-module github.com/komoe-monywa/uri-to-json
+module github.com/komoe-monywa/vpnparse
 
 go 1.20
 
