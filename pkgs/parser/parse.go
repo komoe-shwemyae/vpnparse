@@ -85,7 +85,7 @@ func ParseRawUri(rawUri string) (result string) {
 
 	// [၄] Hysteria2 သို့မဟုတ် Vless ဆိုရင် UUID တွေကို Base64 decode မလုပ်မိအောင် ကျော်ခဲ့မယ်
 	scheme := GetVpnScheme(rawUri)
-	if scheme == SchemeVless || scheme == SchemeHysteria2 || scheme == SchemeTrojan {
+	if scheme == SchemeVless || scheme == SchemeTrojan {
 		result = HandleQuery(tempUri)
 		return
 	}
@@ -120,5 +120,6 @@ func ParseRawUri(rawUri string) (result string) {
 	result = HandleQuery(result)
 	return
 }
+
 
 
