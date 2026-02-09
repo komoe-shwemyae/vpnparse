@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dev7dev/uri-to-json/pkgs/parser"
-	"github.com/dev7dev/uri-to-json/pkgs/utils"
+	"github.com/komoe-monywa/uri-to-json/pkgs/parser"
+	"github.com/komoe-monywa/uri-to-json/pkgs/utils"
 	"github.com/gogf/gf/v2/encoding/gjson"
 )
 
