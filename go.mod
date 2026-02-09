@@ -1,6 +1,6 @@
 module github.com/komoe-monywa/vpnparse
 
-go 1.20
+go 1.25.7
 
 require (
 	github.com/gogf/gf/v2 v2.6.1
