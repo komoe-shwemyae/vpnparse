@@ -50,29 +50,67 @@ type ParserSS struct {
 }
 
 func (that *ParserSS) Parse(rawUri string) {
-	rawUri = that.handleSS(rawUri)
-	if u, err := url.Parse(rawUri); err == nil {
-		that.StreamField = &StreamField{}
-		that.Address = u.Hostname()
-		that.Port, _ = strconv.Atoi(u.Port())
-		that.Method = u.User.Username()
-		if that.Method == "rc4" {
-			that.Method = "rc4-md5"
-		}
-		if _, ok := SSMethod[that.Method]; !ok {
-			that.Method = "none"
-		}
-		that.Password, _ = u.User.Password()
+ // ၁။ Custom handler ကို အရင်ဖြတ်မယ်
+ rawUri = that.handleSS(rawUri)
+	
+ // ၂။ URL တစ်ခုလုံးကို အရင် parse လုပ်ကြည့်မယ်
+ u, err := url.Parse(rawUri)
+ if err != nil {
+  return
+ }
 
-		query := u.Query()
-		that.Host = query.Get("host")
-		that.Mode = query.Get("mode")
-		that.Mux = query.Get("mux")
-		that.Path = query.Get("path")
-		that.Plugin = query.Get("plugin")
-		that.OBFS = query.Get("obfs")
-		that.OBFSHost = query.Get("obfs-host")
-	}
+ that.StreamField = &StreamField{}
+ that.Address = u.Hostname()
+	
+ portStr := u.Port()
+ if portStr != "" {
+  that.Port, _ = strconv.Atoi(portStr)
+ }
+
+ // ၃။ URL ကနေ Username/Password မထွက်လာရင် Manual String Splitting လုပ်မယ်
+ // အကြောင်းရင်းက- Password ထဲမှာ base64 characters (=, /, +) တွေပါရင် 
+ // url.Parse က standard မဟုတ်ဘူးဆိုပြီး password ကို empty ပြန်ပေးတတ်လို့ပါ။
+	
+ userInfoPart := ""
+ if strings.Contains(rawUri, "://") && strings.Contains(rawUri, "@") {
+  // "ss://abc:123@host" -> "abc:123" အပိုင်းကိုပဲ ယူတာပါ
+  temp := strings.Split(rawUri, "://")[1]
+  userInfoPart = strings.Split(temp, "@")[0]
+ }
+
+ if strings.Contains(userInfoPart, ":") {
+  parts := strings.SplitN(userInfoPart, ":", 2)
+  that.Method = parts[0]
+  // ၄။ ဒီနေရာမှာ base64 decode မလုပ်ဘဲ မူရင်းအတိုင်း တန်းထည့်ပါတယ်
+  that.Password = parts[1]
+ } else {
+  // တကယ်လို့ u.User ကနေ ရနေသေးရင်လည်း ထည့်ပေးထားမယ်
+  that.Method = u.User.Username()
+  p, _ := u.User.Password()
+  if p != "" {
+   that.Password = p
+  }
+ }
+
+ // ၅။ Method မပါလာရင် shadowsocks က error တက်မှာမို့လို့ logic စစ်ပါတယ်
+ if that.Method == "rc4" {
+  that.Method = "rc4-md5"
+ }
+	
+ // ၆။ အရေးကြီးဆုံးအချက်- password ရော method ရော string အလွတ်မဖြစ်စေရပါဘူး
+ // မဟုတ်ရင် V2ray Core က "password is not specified" ဆိုပြီး ငြင်းပါလိမ့်မယ်
+ if that.Method == "" {
+  that.Method = "aes-256-gcm" // Default method တစ်ခုခု ပေးထားခြင်း
+ }
+
+ query := u.Query()
+ that.Host = query.Get("host")
+ that.Mode = query.Get("mode")
+ that.Mux = query.Get("mux")
+ that.Path = query.Get("path")
+ that.Plugin = query.Get("plugin")
+ that.OBFS = query.Get("obfs")
+ that.OBFSHost = query.Get("obfs-host")
 }
 
 func (that *ParserSS) handleSS(rawUri string) string {
@@ -94,3 +132,4 @@ func (that *ParserSS) Show() {
 		that.Method,
 		that.Password)
 }
+
