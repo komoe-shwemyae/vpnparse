@@ -51,7 +51,7 @@ func ParseRawUri(rawUri string) (result string) {
 		rawUri = strings.ReplaceAll(rawUri, "\u0026", "&")
 	}
 	rawUri, _ = url.QueryUnescape(rawUri)
-	r, err := url.Parse(rawUri)
+	_, err := url.Parse(rawUri)
 	result = rawUri
 	if err != nil {
 		gtui.PrintError(err)
@@ -65,6 +65,7 @@ func ParseRawUri(rawUri string) (result string) {
 	result = HandleQuery(result)
 	return
 }
+
 
 
 
