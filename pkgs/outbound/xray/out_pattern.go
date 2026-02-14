@@ -27,11 +27,15 @@ https://xtls.github.io/config/outbound.html#outboundobject
 */
 
 var XrayOut string = `{
-  "sendThrough": "0.0.0.0",
-  "protocol": "协议名称",
-  "tag": "标识",
-  "settings": %s,
-  "streamSettings": %s
+  "outbounds": [
+    {
+      "sendThrough": "0.0.0.0",
+      "protocol": "",
+      "tag": "",
+      "settings": %s,
+      "streamSettings": {}
+    }
+  ]
 }`
 
 func GetPattern() string {
