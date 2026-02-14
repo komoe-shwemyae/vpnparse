@@ -3,10 +3,10 @@ package outbound
 import (
 	"fmt"
 
-	"github.com/komoe-monywa/vpnparse/pkgs/outbound/sing"
-	"github.com/komoe-monywa/vpnparse/pkgs/outbound/xray"
-	"github.com/komoe-monywa/vpnparse/pkgs/parser"
-	"github.com/komoe-monywa/vpnparse/pkgs/utils"
+	"github.com/komoe-shwemyae/vpnparse/pkgs/outbound/sing"
+	"github.com/komoe-shwemyae/vpnparse/pkgs/outbound/xray"
+	"github.com/komoe-shwemyae/vpnparse/pkgs/parser"
+	"github.com/komoe-shwemyae/vpnparse/pkgs/utils"
 )
 
 type ClientType string
@@ -29,6 +29,10 @@ func GetOutbound(clientType ClientType, rawUri string) (result IOutbound) {
 			result = &xray.TrojanOut{RawUri: rawUri}
 		case parser.SchemeSS:
 			result = &xray.ShadowSocksOut{RawUri: rawUri}
+		case parser.SchemeWireguard:
+			result = &xray.WireguardOut{RawUri: rawUri}
+		case parser.SchemeWireguardOld:
+			result = &xray.WireguardOut{RawUri: rawUri}
 		default:
 			fmt.Println("unsupported protocol: ", scheme)
 		}
@@ -45,7 +49,9 @@ func GetOutbound(clientType ClientType, rawUri string) (result IOutbound) {
 		case parser.SchemeSSR:
 			result = &sing.SShadowSocksROut{RawUri: rawUri}
 		case parser.SchemeWireguard:
-			result = &sing.SWireguardOut{RawUri: rawUri}
+			result = &xray.WireguardOut{RawUri: rawUri}
+		case parser.SchemeWireguardOld:
+			result = &xray.WireguardOut{RawUri: rawUri}
 		default:
 			fmt.Println("unsupported protocol: ", scheme)
 		}
