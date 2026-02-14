@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/komoe-monywa/vpnparse/pkgs/outbound"
+	"github.com/komoe-shwemyae/vpnparse/pkgs/outbound"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	cli "github.com/urfave/cli/v2"
 )
