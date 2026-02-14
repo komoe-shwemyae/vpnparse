@@ -2,6 +2,7 @@ package xray
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/komoe-shwemyae/vpnparse/pkgs/parser"
@@ -88,13 +89,19 @@ func (x *WireguardOut) getSettings() string {
 	j.Set("settings.secretKey", x.Parser.PrivateKey)
 
 	// addresses
-	if x.Parser.AddrV4 != "" {
-		j.Set("settings.address.0", x.Parser.AddrV4)
-	}
-	if x.Parser.AddrV6 != "" {
-		j.Set("settings.address.1", x.Parser.AddrV6)
-	}
-
+	if x.Parser.AddrV4 != "" && !strings.Contains(x.Parser.AddrV4, "/") {
+    j.Set("settings.address.0", x.Parser.AddrV4+"/32")
+	} else if x.Parser.AddrV4 != "" {
+    j.Set("settings.address.0", x.Parser.AddrV4)
+}
+	if x.Parser.AddrV6 != "" && !strings.Contains(x.Parser.AddrV6, "/") {
+    j.Set("settings.address.1", x.Parser.AddrV6+"/128")
+	} else if x.Parser.AddrV6 != "" {
+    j.Set("settings.address.1", x.Parser.AddrV6)
+}
+if x.Parser.KeepAlive > 0 {
+    j.Set("settings.peers.0.persistentKeepalive", x.Parser.KeepAlive)
+}
 	// peer
 	j.Set("settings.peers.0.publicKey", x.Parser.PublicKey)
 	endpoint := fmt.Sprintf("%s:%d", x.Parser.Address, x.Parser.Port)
