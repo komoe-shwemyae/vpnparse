@@ -1,121 +1,86 @@
-package xray
+package sing
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/komoe-shwemyae/vpnparse/pkgs/parser"
 	"github.com/komoe-shwemyae/vpnparse/pkgs/utils"
+	"github.com/gogf/gf/v2/encoding/gjson"
 )
 
-var XrayWireguard = `{
-  "protocol": "wireguard",
-  "tag": "wireguard-out",
-  "settings": {
-    "secretKey": "",
-    "address": [],
-    "peers": [
-      {
-        "publicKey": "",
-        "allowedIPs": ["0.0.0.0/0","::/0"],
-        "endpoint": ""
-      }
-    ],
-    "mtu": 1280
-  }
+var SingWireguard string = `{
+	"type": "wireguard",
+  	"tag": "wireguard-out",
+	"server": "162.159.195.81", 
+	"server_port": 928,
+	"system_interface": false,
+	"interface_name": "wg0",
+	"local_address": [
+		"172.16.0.2/32",
+		"2606:4700:110:8bb9:68be:a130:cede:18bc/128" 
+	],
+	"private_key": "YNXtAzepDqRv9H52osJVDQnznT5AM11eCK3ESpwSt04=",
+	"peer_public_key": "Z1XXLsKYkYxuiYjJIkRvtIKFepCYHTgON+GwPq7SOV4=",
+	"mtu": 1280
 }`
 
-// XRWireguardOut implements IOutbound
-type WireguardOut struct {
+type SWireguardOut struct {
 	RawUri   string
 	Parser   *parser.ParserWirguard
 	outbound string
 }
 
-// -------------------------
-// IOutbound methods
-// -------------------------
-
-func (x *WireguardOut) Parse(rawUri string) {
-	p := &parser.ParserWirguard{}
-	if err := p.Parse(rawUri); err != nil {
-		fmt.Println("WireGuard parse error:", err)
-	}
-	x.Parser = p
-	x.RawUri = rawUri
+func (that *SWireguardOut) Parse(rawUri string) {
+	that.Parser = &parser.ParserWirguard{}
+	that.Parser.Parse(rawUri)
 }
 
-func (x *WireguardOut) Addr() string {
-	if x.Parser == nil {
+func (that *SWireguardOut) Addr() string {
+	if that.Parser == nil {
 		return ""
 	}
-	return x.Parser.GetAddr()
+	return that.Parser.GetAddr()
 }
 
-func (x *WireguardOut) Port() int {
-	if x.Parser == nil {
+func (that *SWireguardOut) Port() int {
+	if that.Parser == nil {
 		return 0
 	}
-	return x.Parser.GetPort()
+	return that.Parser.GetPort()
 }
 
-func (x *WireguardOut) Scheme() string {
+func (that *SWireguardOut) Scheme() string {
 	return parser.SchemeWireguard
 }
 
-func (x *WireguardOut) GetRawUri() string {
-	return x.RawUri
+func (that *SWireguardOut) GetRawUri() string {
+	return that.RawUri
 }
 
-func (x *WireguardOut) GetOutboundStr() string {
-	if x.outbound == "" {
-		x.outbound = x.getSettings()
+func (that *SWireguardOut) getSettings() string {
+	if that.Parser.Address == "" || that.Parser.Port == 0 {
+		return "{}"
 	}
-	return x.outbound
-}
-
-// -------------------------
-// internal helper
-// -------------------------
-
-func (x *WireguardOut) getSettings() string {
-	if x.Parser == nil || x.Parser.Address == "" || x.Parser.Port == 0 {
-		return ""
-	}
-
-	j := gjson.New(XrayWireguard)
+	j := gjson.New(SingWireguard)
 	j.Set("tag", utils.OutboundTag)
-	j.Set("settings.secretKey", x.Parser.PrivateKey)
-
-	// addresses
-	if x.Parser.AddrV4 != "" && !strings.Contains(x.Parser.AddrV4, "/") {
-    j.Set("settings.address.0", x.Parser.AddrV4+"/32")
-	} else if x.Parser.AddrV4 != "" {
-    j.Set("settings.address.0", x.Parser.AddrV4)
-}
-	if x.Parser.AddrV6 != "" && !strings.Contains(x.Parser.AddrV6, "/") {
-    j.Set("settings.address.1", x.Parser.AddrV6+"/128")
-	} else if x.Parser.AddrV6 != "" {
-    j.Set("settings.address.1", x.Parser.AddrV6)
-}
-if x.Parser.KeepAlive > 0 {
-    j.Set("settings.peers.0.persistentKeepalive", x.Parser.KeepAlive)
-}
-	// peer
-	j.Set("settings.peers.0.publicKey", x.Parser.PublicKey)
-	endpoint := fmt.Sprintf("%s:%d", x.Parser.Address, x.Parser.Port)
-	j.Set("settings.peers.0.endpoint", endpoint)
-
-	// mtu
-	if x.Parser.MTU > 0 {
-		j.Set("settings.mtu", x.Parser.MTU)
-	}
-
-	// reserved
-	if x.Parser.Reserved != nil {
-		j.Set("settings.reserved", x.Parser.Reserved)
-	}
-
+	j.Set("server", that.Parser.Address)
+	j.Set("server_port", that.Parser.Port)
+	j.Set("interface_name", that.Parser.DeviceName)
+	j.Set("local_address.0", fmt.Sprintf("%s/32", that.Parser.AddrV4))
+	j.Set("local_address.1", fmt.Sprintf("%s/128", that.Parser.AddrV6))
+	j.Set("private_key", that.Parser.PrivateKey)
+	j.Set("peer_public_key", that.Parser.PublicKey)
+	j.Set("mtu", that.Parser.MTU)
 	return j.MustToJsonString()
+}
+
+func (that *SWireguardOut) GetOutboundStr() string {
+	if that.outbound == "" {
+		settings := that.getSettings()
+		if settings == "{}" {
+			return ""
+		}
+		that.outbound = settings
+	}
+	return that.outbound
 }
