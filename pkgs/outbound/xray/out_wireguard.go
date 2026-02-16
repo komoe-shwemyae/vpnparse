@@ -82,5 +82,8 @@ func (x *WireguardOut) getSettings() string {
 	j.Set("settings.servers.0.persistentKeepalive", x.Parser.KeepAlive)
 	j.Set("settings.servers.0.mtu", x.Parser.MTU)
 	j.Set("settings.servers.0.preSharedKey", x.Parser.PresharedKey)
+	if x.Parser.PresharedKey != "" {
+		j.Set("settings.servers.0.preSharedKey", x.Parser.PresharedKey)
+	}
 	return j.MustToJsonString()
 }
