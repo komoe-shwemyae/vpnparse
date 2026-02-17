@@ -66,16 +66,34 @@ func (that *ParserWirguard) Parse(rawUri string) error {
 
 	q := u.Query()
 
+	ep := q.Get("endpoint")
+	if ep != "" {
+		that.Endpoint = ep
+		} else {
+	that.Endpoint = fmt.Sprintf("%s:%d", that.Address, that.Port)
+}
+
 	// 🔥 restore + in base64 keys
 	that.PrivateKey = restorePlus(q.Get("privateKey"))
 	that.PublicKey = restorePlus(q.Get("publicKey"))
 	that.PresharedKey = restorePlus(q.Get("presharedKey"))
-	that.AddrV4 = q.Get("ip")
-
 	that.MTU, _ = strconv.Atoi(q.Get("mtu"))
 	that.KeepAlive, _ = strconv.Atoi(q.Get("keepalive"))
+	that.ClientID = q.Get("client_id")
 	that.UDP = q.Get("udp") == "1"
-
+	ip := q.Get("ip")
+if ip != "" {
+	ips := strings.Split(ip, ",")
+	for _, v := range ips {
+		v = strings.TrimSpace(v)
+		if strings.Contains(v, ":") {
+			that.AddrV6 = v
+		} else {
+			that.AddrV4 = v
+		}
+	}
+}
+	
 	// Reserved array
 	res := q.Get("reserved")
 	if res != "" {
@@ -115,6 +133,19 @@ func (that *ParserWirguard) Parse(rawUri string) error {
 	}
 
 	return nil
+}
+
+func (that *ParserWirguard) GetAddressList() []string {
+	var result []string
+
+	if that.AddrV4 != "" {
+		result = append(result, that.AddrV4)
+	}
+	if that.AddrV6 != "" {
+		result = append(result, that.AddrV6)
+	}
+
+	return result
 }
 
 func restorePlus(s string) string {
