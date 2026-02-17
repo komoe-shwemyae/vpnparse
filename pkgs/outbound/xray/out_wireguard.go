@@ -9,11 +9,10 @@ import (
 )
 
 var XrayWireguard = `{
-	  "protocol": "wireguard",
-	  "tag": "proxy",
-	  "settings": { "peer": [{}] }
-	}`
-
+  "protocol": "wireguard",
+  "tag": "proxy",
+  "settings": {}
+}`
 // XRWireguardOut implements IOutbound
 type WireguardOut struct {
 	RawUri   string
@@ -68,23 +67,54 @@ func (x *WireguardOut) GetOutboundStr() string {
 // -------------------------
 
 func (x *WireguardOut) getSettings() string {
-	if x.Parser == nil || x.Parser.Address == "" || x.Parser.Port == 0 || x.Parser.PrivateKey == "" {
+
+	if x.Parser == nil ||
+		x.Parser.Address == "" ||
+		x.Parser.Port == 0 ||
+		x.Parser.PrivateKey == "" {
 		return ""
 	}
 
 	j := gjson.New(XrayWireguard)
 
 	j.Set("tag", utils.OutboundTag)
-	j.Set("settings.address", x.Parser.Address)
+
+	// ======================
+	// Core Settings
+	// ======================
+
 	j.Set("settings.secretKey", x.Parser.PrivateKey)
-	j.Set("settings.peer.0.publicKey", x.Parser.PublicKey)
-	j.Set("settings.peer.0.preSharedKey", x.Parser.PresharedKey)
-	j.Set("settings.peer.0.allowedIps.0", fmt.Sprintf("%s/32", x.Parser.AddrV4))
-	j.Set("settings.peer.0.allowedIps.1", fmt.Sprintf("%s/128", x.Parser.AddrV6))
-	j.Set("settings.peer.0.persistentKeepalive", x.Parser.KeepAlive)
-	j.Set("settings.peer.0.endpoint", x.Parser.Endpoint)
-	j.Set("settings.peer.0.port", x.Parser.Port)
 	j.Set("settings.mtu", x.Parser.MTU)
-	
+
+	// optional defaults
+	j.Set("settings.workers", 2)
+	j.Set("settings.domainStrategy", "ForceIPv6v4")
+	j.Set("settings.noKernelTun", false)
+
+	// ======================
+	// Address (array)
+	// ======================
+
+	addrList := x.Parser.GetAddressList()
+	for i, addr := range addrList {
+		j.Set(fmt.Sprintf("settings.address.%d", i), addr)
+	}
+
+	// ======================
+	// Peers
+	// ======================
+
+	j.Set("settings.peers.0.publicKey", x.Parser.PublicKey)
+
+	if x.Parser.PresharedKey != "" {
+		j.Set("settings.peers.0.preSharedKey", x.Parser.PresharedKey)
+	}
+
+	j.Set("settings.peers.0.endpoint", x.Parser.Endpoint)
+
+	if x.Parser.KeepAlive > 0 {
+		j.Set("settings.peers.0.persistentKeepalive", x.Parser.KeepAlive)
+	}
+
 	return j.MustToJsonString()
 }
